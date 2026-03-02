@@ -61,18 +61,69 @@ for(i in 8:length(weather$AirTemp)){
 weather$airMA <- airMA
 
 
-#prompt 2
-May_June <- weather %>%
-  filter(month(weather$dateF)==5 |
-           month(weather$dateF)==6
-
 
 
 
 # In Class Prompts --------------------------------------------------------
 
-
+#prompt 2
+May_June <- weather %>%
+  filter(month(weather$dateF)==5 |
+           month(weather$dateF)==6)
+ggplot(data=May_June, aes(x=dateF, y=SolRad))+
+  geom_line()
 
 # Homeworks Prompts -------------------------------------------------------
+
+#prompt 1
+Clinton <- weather %>%
+  filter(RHSensorTemp>0 &
+           XLevel<2 &
+           YLevel<2) %>%
+  #filter for months w/ bird activity and without spike
+  filter(dateET<"2021-05-01" | dateET>"2021-06-30")
+
+sum(is.na(weather$Precip))
+  
+#prompt 2 
+#create voltage flag
+weather$voltageflag <- ifelse(weather$BatVolt <= 8.5, #if true:set flag to 1
+                              1, 0) #if false: set flag to 1
+
+
+#prompt 3 
+check_temp_rad <- function(weather, tempcol ="AirTemp", 
+                           radcol="SolRad") 
+  #define temp limits
+{mintemp <- -35
+  maxtemp <- 43
+  minrad <- 0
+  maxrad <- 1200
+  #flag unrealistic values
+  temp_flag <- weather[[tempcol]]<mintemp | weather[[tempcol]]>maxtemp
+rad_flag <- weather[[radcol]]< minrad | weather[[radcol]]> maxrad
+flagged_data <- weather
+flagged_data$tempunreal <- temp_flag
+flagged_data$radunreal <- rad_flag
+return(flagged_data)
+ }
+#run function
+verifiedweather <- check_temp_rad(weather)
+
+
+#prompt 4
+#create filter 
+Jan_March <- weather %>%
+  filter(dateET>="2021-01-01", dateET <="2021-03-31")
+
+#plot Jan-March
+ggplot(data=Jan_March,
+       aes(x=dateET, y=AirTemp)) +
+  geom_line()
+
+
+#prompt 5
+March_April <- weather %>%
+  filter(dateET>="2021-03-01", dateET <= "2021-04-30")
 
 
