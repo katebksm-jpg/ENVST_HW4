@@ -92,7 +92,7 @@ weather$voltageflag <- ifelse(weather$BatVolt <= 8.5, #if true:set flag to 1
 
 
 #prompt 3 
-check_temp_rad <- function(weather, tempcol ="AirTemp", 
+check_temp_rad <- function (weather, tempcol ="AirTemp", 
                            radcol="SolRad") 
   #define temp limits
 {mintemp <- -35
@@ -102,11 +102,15 @@ check_temp_rad <- function(weather, tempcol ="AirTemp",
   #flag unrealistic values
   temp_flag <- weather[[tempcol]]<mintemp | weather[[tempcol]]>maxtemp
 rad_flag <- weather[[radcol]]< minrad | weather[[radcol]]> maxrad
+
+#add flags to dataset
 flagged_data <- weather
 flagged_data$tempunreal <- temp_flag
 flagged_data$radunreal <- rad_flag
 return(flagged_data)
- }
+}
+
+
 #run function
 verifiedweather <- check_temp_rad(weather)
 
@@ -115,7 +119,7 @@ verifiedweather <- check_temp_rad(weather)
 #create filter 
 Jan_March <- weather %>%
   filter(dateET>="2021-01-01", dateET <="2021-03-31")
-
+  
 #plot Jan-March
 ggplot(data=Jan_March,
        aes(x=dateET, y=AirTemp)) +
