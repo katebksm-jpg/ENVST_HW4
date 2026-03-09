@@ -46,10 +46,11 @@ soilList <- list()
 for(i in 1:length(soilFiles)){
   soillist[[i]]<-read.csv(paste0("/cloud/project/activity04/soil/", soilFiles[i]))
 }
-
-str(soillist)
+#inspect first file
+head(soillist)
 
 soilData <- do.call("rbind", soilList)
+
 
 #calculate moving average
 airMA <- numeric()
@@ -88,7 +89,7 @@ sum(is.na(weather$Precip))
 #prompt 2 
 #create voltage flag
 weather$voltageflag <- ifelse(weather$BatVolt <= 8.5, #if true:set flag to 1
-                              1, 0) #if false: set flag to 1
+                              1, 0) #if false: set flag to 0
 
 
 #prompt 3 
@@ -100,20 +101,7 @@ check_temp_rad <- function (weather, tempcol ="AirTemp",
   minrad <- 0
   maxrad <- 1200
   #flag unrealistic values
-  temp_flag <- weather[[tempcol]]<mintemp | weather[[tempcol]]>maxtemp
-rad_flag <- weather[[radcol]]< minrad | weather[[radcol]]> maxrad
-
-#add flags to dataset
-flagged_data <- weather
-flagged_data$tempunreal <- temp_flag
-flagged_data$radunreal <- rad_flag
-return(flagged_data)
-}
-
-
-#run function
-verifiedweather <- check_temp_rad(weather)
-
+  
 
 #prompt 4
 #create filter 
@@ -126,8 +114,40 @@ ggplot(data=Jan_March,
   geom_line()
 
 
-#prompt 5
+#prompt 5 
 March_April <- weather %>%
   filter(dateET>="2021-03-01", dateET <= "2021-04-30")
 
+# start an empty list
+MarchAprillist <- list()
 
+#create for loop
+for (i in 2:nrow(March_April)) { 
+  if (March_April$AirTemp[i]< 1.6667 | March_April$AirTemp[i-1] < 1.6667)
+March_April$Precip[i] <- NA
+  }
+
+#check number of NA values
+sum(!is.na(March_April$Precip))
+
+
+#prompt 6
+
+set up variable to be used in for loop
+soilList <- list()
+
+for(i in 1:length(soilFiles)){
+  soillist[[i]]<-read.csv(paste0("/cloud/project/activity04/soil/", soilFiles[i]))
+}
+#inspect first file
+head(soillist)
+
+soilData <- do.call("rbind", soilList)
+timeCheck900 <- function(x){
+  intervals <- x[-length(x)] %--% x[-1]
+  interval_times <- int_length(intervals)
+  intervals[interval_times != 900]
+}
+
+#check sum 
+sum(!is.na(March_April$Precip))
