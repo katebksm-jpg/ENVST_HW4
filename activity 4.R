@@ -66,9 +66,6 @@ for(i in 8:length(weather$AirTemp)){
 weather$airMA <- airMA
 
 
-
-
-
 # In Class Prompts --------------------------------------------------------
 
 #prompt 1 
@@ -172,6 +169,7 @@ sum(!is.na(precip.check))
 
 
 #prompt 6
+#read in files
 soilFiles <- list.files("/cloud/project/activity04/soil")
 
 #set up variable to be used in for loop
@@ -189,7 +187,7 @@ soilData <- do.call("rbind", soillist)
 soilData$dateTime <- ymd_hm(soilData$Timestamp)
 soilData$dateET <- ymd_hm(soilData$Timestamp, tz="America/New_York")
 
-#create user defined functionn
+#create user defined function for data x, time interval t
 timeCheck <- function(x,t){intervals <- x[-length(x)] %--% x[-1]
  interval_times<-int_length(intervals)
  intervals[interval_times!= t]
