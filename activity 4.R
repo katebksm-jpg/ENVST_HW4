@@ -13,9 +13,12 @@ metaDat <- read.csv("/cloud/project/activity04/meter_weather_metadata.csv",
                     na.strings = "#N/A")
 
 #parse dates 
-
 weather$dateF <- mdy_hm(weather$Date)
 weather$dateET <- mdy_hm(weather$Date, tz="America/New_York")
+weather$doy <- yday(weather$dateF)
+weather$year <- year(weather$dateF)
+
+weather
 
 weatherCheck <- weather %>%
   filter(is.na(weather$dateET))
@@ -38,6 +41,7 @@ timeCheck900 <- function(x){
 
 timeCheck900(weather$dateF)
 
+#read in soil files
 soilFiles <- list.files("/cloud/project/activity04/soil")
 
 #set up variable to be used in for loop
@@ -49,7 +53,7 @@ for(i in 1:length(soilFiles)){
 #inspect first file
 head(soillist)
 
-soilData <- do.call("rbind", soilList)
+soilData <- do.call("rbind", soillist)
 
 
 #calculate moving average
@@ -74,34 +78,57 @@ May_June <- weather %>%
 ggplot(data=May_June, aes(x=dateF, y=SolRad))+
   geom_line()
 
+
 # Homeworks Prompts -------------------------------------------------------
 
 #prompt 1
-Clinton <- weather %>%
-  filter(RHSensorTemp>0 &
-           XLevel<2 &
-           YLevel<2) %>%
-  #filter for months w/ bird activity and without spike
-  filter(dateET<"2021-05-01" | dateET>"2021-06-30")
+#convert perception below freezing, impacted by bird excretment, 
+#or with X/Y values above to NA values 
 
-sum(is.na(weather$Precip))
-  
+weatherQC <- weather
+#filter by date and add new column
+#bird excrement period (May or June)
+weatherQC$Precip <- ifelse(weatherQC$doy >= 121 & weatherQC$doy <= 188 & weatherQC$year == 2021, 
+                           NA, weatherQC$Precip) 
+#temperatures below 0
+weatherQC$Precip <- ifelse(weatherQC$AirTemp<=0, NA, weatherQC$Precip)
+
+#x and y level 
+weatherQC$Precip <- ifelse(weatherQC$XLevel>2 |
+                             weatherQC$YLevel>2, NA, weatherQC$Precip)
+
+#find the total na values
+sum(is.na(weatherQC$Precip))
+
+
 #prompt 2 
 #create voltage flag
-weather$voltageflag <- ifelse(weather$BatVolt <= 8.5, #if true:set flag to 1
-                              1, 0) #if false: set flag to 0
+weather$voltageflag <- ifelse(weather$BatVolt <= 8.5, #if true:set flag to "warning",
+                              #if false set flag to "good"
+                              "battery warning", "good")
 
 
 #prompt 3 
-check_temp_rad <- function (weather, tempcol ="AirTemp", 
-                           radcol="SolRad") 
+# function that checks for observations that are in unrealistic data ranges 
+#in air temperature and solar radiation
+
+check_temp_rad <- function (weather)
   #define temp limits
-{mintemp <- -35
-  maxtemp <- 43
-  minrad <- 0
-  maxrad <- 1200
+{mintemp <- -35 #manual indicates lowest readable value is 50, but this is a more realistic value for Clinton
+  maxtemp <- 50 #122 degrees F, manual indicates 60 but Clinton does not typically get so hot
+  maxrad <- 1750 #max reading from sensor manual
   #flag unrealistic values
-  
+  #if unrealistic will be "Unrealistic," if realistic "Realistic"
+weather$tempcheck <- ifelse(weather$AirTemp<=mintemp | weather$AirTemp>=maxtemp,
+"Unrealistic", "Realistic")
+weather$radcheck <- ifelse(weather$SolRad<0 #solar rad can't be negative 
+                           | weather$SolRad >= maxrad, 
+                            "Unrealistic", "Realistic")
+return(weather)
+}
+
+#run funciton on weather
+weather_check <- check_temp_rad(weather)
 
 #prompt 4
 #create filter 
@@ -115,25 +142,32 @@ ggplot(data=Jan_March,
 
 
 #prompt 5 
+#create new data frame that summarizes total precipitation and minimum air temperature
 March_April <- weather %>%
-  filter(dateET>="2021-03-01", dateET <= "2021-04-30")
+  filter(year==2021) %>%
+  #filter for March and April
+  filter(dateET>="2021-03-01", dateET <= "2021-04-30") %>%
+  group_by(doy)%>%
+  summarise(totPrecip=sum(Precip), mintemp=min(AirTemp))
 
-# start an empty list
-MarchAprillist <- list()
+# start an empty numeric vector
+precip.check<-as.numeric(NA)
 
-#create for loop
-for (i in 2:nrow(March_April)) { 
-  if (March_April$AirTemp[i]< 1.6667 | March_April$AirTemp[i-1] < 1.6667)
-March_April$Precip[i] <- NA
-  }
+for(i in 2:nrow(March_April)){precip.check[i]<-ifelse(March_April$mintemp[i]<=1.7|
+                                                         March_April$mintemp[i-1]<=1.7,
+                                                       NA, March_April$totPrecip[i])}
+
+March_April$precip.check <- precip.check
 
 #check number of NA values
-sum(!is.na(March_April$Precip))
+sum(!is.na(precip.check))
 
 
 #prompt 6
+soilFiles <- list.files("/cloud/project/activity04/soil")
 
-set up variable to be used in for loop
+
+#set up variable to be used in for loop
 soilList <- list()
 
 for(i in 1:length(soilFiles)){
@@ -142,12 +176,17 @@ for(i in 1:length(soilFiles)){
 #inspect first file
 head(soillist)
 
-soilData <- do.call("rbind", soilList)
-timeCheck900 <- function(x){
-  intervals <- x[-length(x)] %--% x[-1]
-  interval_times <- int_length(intervals)
-  intervals[interval_times != 900]
-}
+soilData <- do.call("rbind", soillist)
 
-#check sum 
-sum(!is.na(March_April$Precip))
+#parse dates and times through lubridate
+soilData$dateTime <- ymd_hm(soilData$Timestamp)
+soilData$dateET <- ymd_hm(soilData$Timestamp, tz="America/New_York")
+
+#change this so it can be user defined
+timeCheck <- function(x,t){intervals <- x[-length(x)] %--% x[-1]
+ interval_times<-int_length(intervals)
+ intervals[interval_times!= t]
+  }
+
+timeCheck(soilData$dateET, 3600)
+
