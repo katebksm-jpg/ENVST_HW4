@@ -92,15 +92,15 @@ ggplot(data=May_June, aes(x=dateF, y=SolRad))+
 
 weatherQC <- weather
 #bird excrement period (May or June)
-weatherQC$Precip <- ifelse(weatherQC$doy >= 121 & weatherQC$doy <= 188 
+weatherQC$PrecipQC <- ifelse(weatherQC$doy >= 121 & weatherQC$doy <= 188 
                            & weatherQC$year == 2021, 
                            NA, weatherQC$Precip) 
 #temperatures below 0
-weatherQC$Precip <- ifelse(weatherQC$AirTemp<=0, NA, weatherQC$Precip)
+weatherQC$PrecipQC <- ifelse(weatherQC$AirTemp<=0, NA, weatherQC$PrecipQC)
 
 #x and y level 
-weatherQC$Precip <- ifelse(weatherQC$XLevel>2 |
-                             weatherQC$YLevel>2, NA, weatherQC$Precip)
+weatherQC$PrecipQC <- ifelse(weatherQC$XLevel>2 |
+                             weatherQC$YLevel>2, NA, weatherQC$PrecipQC)
 
 #find the total NA values
 sum(is.na(weatherQC$Precip))
@@ -110,7 +110,7 @@ sum(is.na(weatherQC$Precip))
 #create voltage flag
 weather$voltageflag <- ifelse(weather$BatVolt <= 8.5, #if true:set flag to "warning",
                               #if false set flag to "good"
-                              "battery warning", "good")
+                              "battery warning", "battery good")
 
 
 #prompt 3 
@@ -121,7 +121,8 @@ check_temp_rad <- function (weather)
   #define temp limits
 {mintemp <- -35 #manual indicates lowest readable value is 50, but this is a more realistic value for Clinton
   maxtemp <- 50 #122 degrees F, manual indicates 60 but Clinton does not typically get so hot
-  maxrad <- 1750 #max reading from sensor manual
+  maxrad <- 1250 #max reading from sensor manual is 1750, but based on research 
+  #a more realistic high value would be around 1000
   #flag unrealistic values
   #if unrealistic will be "Unrealistic," if realistic "Realistic"
 weather$tempcheck <- ifelse(weather$AirTemp<=mintemp | weather$AirTemp>=maxtemp,
@@ -132,7 +133,7 @@ weather$radcheck <- ifelse(weather$SolRad<0 #solar rad can't be negative
 return(weather)
 }
 
-#run funciton on weather
+#run function on weather
 weather_check <- check_temp_rad(weather)
 
 #prompt 4
@@ -143,9 +144,9 @@ Jan_March <- weather %>%
 #plot Jan-March
 ggplot(data=Jan_March,
        aes(x=dateET, y=AirTemp)) +
-  geom_line()+
+  geom_line(color="steelblue")+
   labs(title="January-March Air Temperatures (2021)",
-    x="Date", y="Air Temperature (Celsius)")
+    x="Date", y="Air Temperature (°C)")
 
 
 #prompt 5 
