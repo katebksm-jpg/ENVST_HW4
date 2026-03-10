@@ -71,6 +71,9 @@ weather$airMA <- airMA
 
 # In Class Prompts --------------------------------------------------------
 
+#prompt 1 
+#completed above 
+
 #prompt 2
 May_June <- weather %>%
   filter(month(weather$dateF)==5 |
@@ -78,17 +81,19 @@ May_June <- weather %>%
 ggplot(data=May_June, aes(x=dateF, y=SolRad))+
   geom_line()
 
+#prompt 3
 
-# Homeworks Prompts -------------------------------------------------------
+
+# Homework Prompts -------------------------------------------------------
 
 #prompt 1
-#convert perception below freezing, impacted by bird excretment, 
+#convert perception below freezing, impacted by bird excrement, 
 #or with X/Y values above to NA values 
 
 weatherQC <- weather
-#filter by date and add new column
 #bird excrement period (May or June)
-weatherQC$Precip <- ifelse(weatherQC$doy >= 121 & weatherQC$doy <= 188 & weatherQC$year == 2021, 
+weatherQC$Precip <- ifelse(weatherQC$doy >= 121 & weatherQC$doy <= 188 
+                           & weatherQC$year == 2021, 
                            NA, weatherQC$Precip) 
 #temperatures below 0
 weatherQC$Precip <- ifelse(weatherQC$AirTemp<=0, NA, weatherQC$Precip)
@@ -97,7 +102,7 @@ weatherQC$Precip <- ifelse(weatherQC$AirTemp<=0, NA, weatherQC$Precip)
 weatherQC$Precip <- ifelse(weatherQC$XLevel>2 |
                              weatherQC$YLevel>2, NA, weatherQC$Precip)
 
-#find the total na values
+#find the total NA values
 sum(is.na(weatherQC$Precip))
 
 
@@ -131,14 +136,16 @@ return(weather)
 weather_check <- check_temp_rad(weather)
 
 #prompt 4
-#create filter 
+#create filter for January and March
 Jan_March <- weather %>%
   filter(dateET>="2021-01-01", dateET <="2021-03-31")
   
 #plot Jan-March
 ggplot(data=Jan_March,
        aes(x=dateET, y=AirTemp)) +
-  geom_line()
+  geom_line()+
+  labs(title="January-March Air Temperatures (2021)",
+    x="Date", y="Air Temperature (Celsius)")
 
 
 #prompt 5 
@@ -166,7 +173,6 @@ sum(!is.na(precip.check))
 #prompt 6
 soilFiles <- list.files("/cloud/project/activity04/soil")
 
-
 #set up variable to be used in for loop
 soilList <- list()
 
@@ -182,11 +188,13 @@ soilData <- do.call("rbind", soillist)
 soilData$dateTime <- ymd_hm(soilData$Timestamp)
 soilData$dateET <- ymd_hm(soilData$Timestamp, tz="America/New_York")
 
-#change this so it can be user defined
+#create user defined functionn
 timeCheck <- function(x,t){intervals <- x[-length(x)] %--% x[-1]
  interval_times<-int_length(intervals)
  intervals[interval_times!= t]
   }
 
+#use function to check for an interval of 3600 sec (1 hour)
+#use ET as this weather station is at Hamilton College
 timeCheck(soilData$dateET, 3600)
 
